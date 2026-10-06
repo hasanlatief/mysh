@@ -1,0 +1,41 @@
+Authors
+--------------------------------------------------------------------------------
+Hasan Latief: hl1254
+Jared Yili: jy1014
+
+Design Notes
+--------------------------------------------------------------------------------
+Overall Structure:
+Our program's code is split across three parts, each with its own header and implementation file, plus a main driver containing the terminal's input loop and token parser. 
+
+builtin_commands.h provides our implementations of the built-in commands cd, pwd, and which, using the POSIX commands chdir() and getcwd() as per the assignment description.
+For which, we made a findExecutable method that searches our assumed executable dirs for existing binaries.
+We also made a wildcard expansion method that we ended up abandoning for glob() in our main input loop.
+
+process_dispatch.h provides the implementation of our process dispatch system, which uses fork() and execv() to create child processes and run commands.
+It also includes a function for creating a process pipeline, which uses pipe() to create a pipe between two processes and redirects their input and output using dup2().
+In our implementation, a pipeline is represented as a linked list of commands, where each command is represented as a struct containing the command's executable name and arguments.
+This allows us to execute the pipeline by recursively forking and executing each command in the pipeline, while properly redirecting their input and output.
+
+string_helpers.h provides helper functions for string manipulation, such as determining whether a string starts or ends with a certain substring.
+These functions were used in determining whether a path was in the user's HOME directory and in our scrapped implementation of wildcard expansion.
+It also contains the StrVec struct, which is a wrapper around a dynamically allocated array of strings.
+We use this to store the arguments for each command and the list of results of a wildcard expansion.
+
+Build and Test System:
+We used CMake 3.28 for this project with the permission of Professor Menendez. We did this for two reasons.
+First, it allows us to easily separate testing files from source files. Second, it allows us to use CTest to automatically run all our tests and view any that failed.
+
+Individual Tests:
+
+dispatch_test.c tests the process dispatch system by creating a simple pipeline of commands and verifying that the output is correct.
+
+find_test.c tests the findExecutable function by verifying that it correctly identifies the paths of existing executables and returns NULL for non-existent ones.
+Note: This test may fail if the expected executables are not in the assumed directories.
+      In particular, it assumes that "apt" is in "usr/local/bin", which is not the case on the ilab systems, but is on my local machine.
+
+wildcard_test.c tests the wildcard expansion function by verifying that it correctly expands wildcards in file paths and returns the expected results.
+Unfortunately, we had to scrap our implementation of wildcard expansion in favor of glob(), so this test is no longer relevant, but we included it for completeness.
+
+test_batch.sh is a bash script with a variety of test cases on mysh, as in integration test.
+It includes tests for the built-in commands, pipes, redirection, wildcard expansion, syntax errors, and exit codes.
